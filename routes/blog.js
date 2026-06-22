@@ -36,8 +36,13 @@ router.get("/:id", async(req, res) => {
 });
 
 router.post("/comment/:blogId", async (req, res) => {
+  const content = req.body.content ? req.body.content.trim() : "";
+  if (!content) {
+    return res.redirect(`/blog/${req.params.blogId}`);
+  }
+
   await Comment.create({
-    content: req.body.content,
+    content,
     blogId: req.params.blogId,
     createdBy: req.user._id,
   });

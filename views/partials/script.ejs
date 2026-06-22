@@ -1,3 +1,52 @@
  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" 
  integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" 
  crossorigin="anonymous"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const input = document.getElementById('comment-content');
+    const button = document.getElementById('comment-add-btn');
+
+     if (input && button) {
+      function updateButtonVisibility() {
+        const value = input.value.trim();
+        const charCount = value.length;
+        button.style.display = charCount >= 3 ? 'inline-block' : 'none';
+      }
+
+      input.addEventListener('input', updateButtonVisibility);
+      updateButtonVisibility();
+    }
+
+    function timeAgo(iso) {
+      const now = Date.now();
+      const then = new Date(iso).getTime();
+      const seconds = Math.floor((now - then) / 1000);
+      if (isNaN(seconds)) return '';
+      if (seconds < 5) return 'just now';
+      if (seconds < 60) return `${seconds} second${seconds > 1 ? 's' : ''} ago`;
+      const minutes = Math.floor(seconds / 60);
+      if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+      const hours = Math.floor(minutes / 60);
+      if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+      const days = Math.floor(hours / 24);
+      if (days < 7) return `${days} day${days > 1 ? 's' : ''} ago`;
+      const weeks = Math.floor(days / 7);
+      if (weeks < 5) return `${weeks} week${weeks > 1 ? 's' : ''} ago`;
+      const months = Math.floor(days / 30);
+      if (months < 12) return `${months} month${months > 1 ? 's' : ''} ago`;
+      const years = Math.floor(days / 365);
+      return `${years} year${years > 1 ? 's' : ''} ago`;
+    }
+
+    function updateAllTimes() {
+      document.querySelectorAll('.comment-time').forEach(el => {
+        const iso = el.getAttribute('datetime');
+        const text = timeAgo(iso);
+        if (text) el.textContent = text;
+      });
+    }
+
+    updateAllTimes();
+    setInterval(updateAllTimes, 60000);
+  });
+</script>

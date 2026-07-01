@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const mongoose = require('mongoose');
@@ -9,11 +10,16 @@ const UserRoute = require('./routes/user');
 const blogRoute = require('./routes/blog');
 const { checkForAuthenticationCookie } = require('./middlewares/authentication');
 const app = express();
-const PORT = 8000;
+const PORT = process.env.PORT || 8000;
 
 
-mongoose.connect('mongodb://localhost:27017/blog_chunks')
-.then((e) => console.log('Connected to MongoDB')).catch(err => console.log(err));
+const MONGO_URL = process.env.MONGO_URL || 'mongodb://localhost:27017/blog_chunks';
+mongoose.connect(MONGO_URL)
+.then(() => console.log('Connected to MongoDB'))
+.catch(err => {
+  console.error('Failed to connect to MongoDB:', err);
+  process.exit(1);
+});
 
 app.set('view engine', 'ejs');
 app.set('views', path.resolve('./views'));

@@ -13,10 +13,15 @@ async function handleGetBlogById(req, res) {
     if (!blog) {
       return res.render('home', {
         user: req.user,
-        blogs: await Blog.find({}),
+        blogs: await Blog.find({ status: 'published' }).sort({ createdAt: -1 }),
         error: "Blog not found.",
       });
     }
+    
+    // Increment views
+    blog.views += 1;
+    await blog.save();
+
     const comments = await Comment.find({ blogId: req.params.id }).populate("createdBy");
     return res.render('blog', {
       user: req.user,
@@ -25,10 +30,9 @@ async function handleGetBlogById(req, res) {
     });
   } catch (err) {
     console.error("Error fetching blog:", err);
-    // Render home with error if the id is invalid or DB error occurs
     return res.render('home', {
       user: req.user,
-      blogs: await Blog.find({}),
+      blogs: await Blog.find({ status: 'published' }).sort({ createdAt: -1 }),
       error: "Invalid Blog URL or Blog not found.",
     });
   }
@@ -54,7 +58,7 @@ async function handleCreateComment(req, res) {
 }
 
 async function handleCreateBlog(req, res) {
-  const { title, body } = req.body;
+  const { title, body, status, category, tags } = req.body;
   
   if (!title || !body) {
     return res.render('addBlog', {
@@ -63,7 +67,6 @@ async function handleCreateBlog(req, res) {
     });
   }
 
-  // Cover image sanity check: Multer populates req.file if a file was uploaded.
   if (!req.file) {
     return res.render('addBlog', {
       user: req.user,
@@ -71,10 +74,15 @@ async function handleCreateBlog(req, res) {
     });
   }
 
+  const tagsArray = tags ? tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+
   try {
     const blog = await Blog.create({
       body,
       title,
+      status: status || 'published',
+      category: category || '',
+      tags: tagsArray,
       createdBy: req.user._id,
       coverImageURL: `/uploads/${req.file.filename}`,
     });
@@ -88,9 +96,90 @@ async function handleCreateBlog(req, res) {
   }
 }
 
+async function renderEditBlogPage(req, res) {
+  try {
+    const blog = await Blog.findById(req.params.id);
+    if (!blog || blog.createdBy.toString() !== req.user._id.toString()) {
+      return res.redirect('/');
+    }
+    return res.render('editBlog', {
+      user: req.user,
+      blog,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.redirect('/');
+  }
+}
+
+async function handleUpdateBlog(req, res) {
+  const { title, body, status, category, tags } = req.body;
+  try {
+    const blog = await Blog.findById(req.params.id);
+    if (!blog || blog.createdBy.toString() !== req.user._id.toString()) {
+      return res.redirect('/');
+    }
+
+    blog.title = title;
+    blog.body = body;
+    blog.status = status || 'published';
+    blog.category = category || '';
+    
+    if (tags) {
+      blog.tags = tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+    } else {
+      blog.tags = [];
+    }
+
+    if (req.file) {
+      blog.coverImageURL = `/uploads/${req.file.filename}`;
+    }
+
+    await blog.save();
+    return res.redirect(`/blog/${blog._id}`);
+  } catch (err) {
+    console.error(err);
+    return res.redirect(`/blog/${req.params.id}`);
+  }
+}
+
+async function handleDeleteBlog(req, res) {
+  try {
+    const blog = await Blog.findById(req.params.id);
+    if (!blog || blog.createdBy.toString() !== req.user._id.toString()) {
+      return res.redirect('/');
+    }
+    
+    await Blog.findByIdAndDelete(req.params.id);
+    await Comment.deleteMany({ blogId: req.params.id });
+    
+    return res.redirect('/blog/my-blogs');
+  } catch (err) {
+    console.error(err);
+    return res.redirect('/');
+  }
+}
+
+async function handleMyBlogs(req, res) {
+  try {
+    const blogs = await Blog.find({ createdBy: req.user._id }).sort({ createdAt: -1 });
+    return res.render('myBlogs', {
+      user: req.user,
+      blogs,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.redirect('/');
+  }
+}
+
 module.exports = {
   renderAddBlogPage,
   handleGetBlogById,
   handleCreateComment,
   handleCreateBlog,
+  renderEditBlogPage,
+  handleUpdateBlog,
+  handleDeleteBlog,
+  handleMyBlogs,
 };

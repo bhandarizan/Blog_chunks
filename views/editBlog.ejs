@@ -2,15 +2,16 @@
 <html lang="en">
   <head>
     <%- include('./partials/head') %>
-    <title>Add New Blog</title>
+    <title>Edit Blog</title>
   </head>
   <body>
     <%- include('./partials/nav') %>
 
     <div class="container mt-3">
-      <form action="/blog" method="post" enctype="multipart/form-data">
+      <h2>Edit Blog</h2>
+      <form action="/blog/edit/<%= blog._id %>" method="post" enctype="multipart/form-data">
         <div class="mb-3">
-          <label for="coverImage" class="form-label">Cover Image</label>
+          <label for="coverImage" class="form-label">Cover Image (Leave empty to keep current)</label>
           <input
             type="file"
             class="form-control"
@@ -26,30 +27,30 @@
             class="form-control"
             id="title"
             name="title"
-            aria-describedby="title"
+            value="<%= blog.title %>"
           />
         </div>
         <div class="mb-3">
           <label for="body">Body</label>
-          <textarea name="body" class="form-control" id="body" rows="5"></textarea>
+          <textarea name="body" class="form-control" id="body" rows="5"><%= blog.body %></textarea>
         </div>
         <div class="mb-3">
           <label for="status" class="form-label">Status</label>
           <select name="status" id="status" class="form-control">
-            <option value="published">Published</option>
-            <option value="draft">Draft</option>
+            <option value="published" <%= blog.status === 'published' ? 'selected' : '' %>>Published</option>
+            <option value="draft" <%= blog.status === 'draft' ? 'selected' : '' %>>Draft</option>
           </select>
         </div>
         <div class="mb-3">
           <label for="category" class="form-label">Category</label>
-          <input type="text" class="form-control" id="category" name="category" placeholder="e.g. Technology" />
+          <input type="text" class="form-control" id="category" name="category" value="<%= blog.category || '' %>" />
         </div>
         <div class="mb-3">
           <label for="tags" class="form-label">Tags (comma-separated)</label>
-          <input type="text" class="form-control" id="tags" name="tags" placeholder="e.g. javascript, webdev" />
+          <input type="text" class="form-control" id="tags" name="tags" value="<%= blog.tags ? blog.tags.join(', ') : '' %>" />
         </div>
         <div class="mb-3">
-          <button class="btn btn-primary">Submit</button>
+          <button class="btn btn-primary">Update</button>
         </div>
       </form>
     </div>

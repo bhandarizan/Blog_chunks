@@ -6,6 +6,10 @@ const {
   handleGetBlogById,
   handleCreateComment,
   handleCreateBlog,
+  renderEditBlogPage,
+  handleUpdateBlog,
+  handleDeleteBlog,
+  handleMyBlogs,
 } = require("../controllers/blog");
 
 const router = Router();
@@ -23,11 +27,12 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 router.get("/add-new", renderAddBlogPage);
-
+router.get("/my-blogs", handleMyBlogs);
+router.get("/edit/:id", renderEditBlogPage);
+router.post("/edit/:id", upload.single("coverImage"), handleUpdateBlog);
+router.post("/delete/:id", handleDeleteBlog);
 router.get("/:id", handleGetBlogById);
-
 router.post("/comment/:blogId", handleCreateComment);
-
 router.post("/", upload.single("coverImage"), handleCreateBlog);
 
 module.exports = router;

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <%- include('./partials/head') %>
+    <title>My Blogs</title>
+  </head>
+  <body>
+    <%- include('./partials/nav') %>
+
+    <div class="container mt-4">
+      <h2>My Blogs</h2>
+      <a href="/blog/add-new" class="btn btn-primary mb-3">Create New Blog</a>
+      
+      <% if (blogs.length === 0) { %>
+        <p>You haven't created any blogs yet.</p>
+      <% } else { %>
+        <div class="list-group">
+          <% blogs.forEach(blog => { %>
+            <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+              <div>
+                <a href="/blog/<%= blog._id %>" class="text-decoration-none text-dark">
+                  <h5 class="mb-1"><%= blog.title %></h5>
+                </a>
+                <small class="text-muted">
+                  <%= blog.views %> Views &bull; <%= blog.readingTime %> Min Read
+                </small>
+              </div>
+              <div class="d-flex gap-2 align-items-center">
+                <% if (blog.status === 'draft') { %>
+                  <span class="badge bg-warning text-dark">Draft</span>
+                <% } else { %>
+                  <span class="badge bg-success">Published</span>
+                <% } %>
+                <a href="/blog/edit/<%= blog._id %>" class="btn btn-sm btn-outline-secondary">Edit</a>
+                <form action="/blog/delete/<%= blog._id %>" method="post" class="m-0" onsubmit="return confirm('Are you sure you want to delete this blog?');">
+                  <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                </form>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
+
+    <%- include('./partials/script') %>
+  </body>
+</html>

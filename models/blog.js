@@ -17,9 +17,32 @@ const blogSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: "User",  
     },
+    status: {
+        type: String,
+        enum: ['draft', 'published'],
+        default: 'published'
+    },
+    category: {
+        type: String,
+        required: false
+    },
+    tags: {
+        type: [String],
+        default: []
+    },
+    views: {
+        type: Number,
+        default: 0
+    }
 },
-    { timestamps: true }
+    { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
+
+blogSchema.virtual('readingTime').get(function() {
+    if (!this.body) return 1;
+    const wordCount = this.body.trim().split(/\s+/).length;
+    return Math.max(1, Math.ceil(wordCount / 200));
+});
 
 const Blog = model("blog", blogSchema);
 

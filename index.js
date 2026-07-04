@@ -28,12 +28,24 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.use(checkForAuthenticationCookie('token'));
 app.use(express.static(path.resolve('./public')))
+const { BLOGS_PER_PAGE } = require('./controllers/blog');
 
 app.get('/', async(req, res) => { 
-  const allBlogs = await Blog.find({ status: 'published' }).sort({ createdAt: -1 });
+  const page = parseInt(req.query.page) || 1;
+  const totalBlogs = await Blog.countDocuments({ status: 'published' });
+  const totalPages = Math.max(1, Math.ceil(totalBlogs / BLOGS_PER_PAGE));
+
+  const allBlogs = await Blog.find({ status: 'published' })
+    .sort({ createdAt: -1 })
+    .skip((page - 1) * BLOGS_PER_PAGE)
+    .limit(BLOGS_PER_PAGE);
+
   res.render('home',{
     user: req.user,
     blogs: allBlogs,
+    currentPage: page,
+    totalPages,
+    error: req.query.error || null,
   });
 });
 

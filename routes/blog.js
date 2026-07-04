@@ -10,7 +10,9 @@ const {
   handleUpdateBlog,
   handleDeleteBlog,
   handleMyBlogs,
+  handleToggleLike,
 } = require("../controllers/blog");
+const { requireAuth } = require("../middlewares/role");
 
 const router = Router();
 
@@ -26,13 +28,14 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-router.get("/add-new", renderAddBlogPage);
-router.get("/my-blogs", handleMyBlogs);
-router.get("/edit/:id", renderEditBlogPage);
-router.post("/edit/:id", upload.single("coverImage"), handleUpdateBlog);
-router.post("/delete/:id", handleDeleteBlog);
+router.get("/add-new", requireAuth, renderAddBlogPage);
+router.get("/my-blogs", requireAuth, handleMyBlogs);
+router.get("/edit/:id", requireAuth, renderEditBlogPage);
+router.post("/edit/:id", requireAuth, upload.single("coverImage"), handleUpdateBlog);
+router.post("/delete/:id", requireAuth, handleDeleteBlog);
+router.post("/:id/like", requireAuth, handleToggleLike);
 router.get("/:id", handleGetBlogById);
-router.post("/comment/:blogId", handleCreateComment);
-router.post("/", upload.single("coverImage"), handleCreateBlog);
+router.post("/comment/:blogId", requireAuth, handleCreateComment);
+router.post("/", requireAuth, upload.single("coverImage"), handleCreateBlog);
 
 module.exports = router;

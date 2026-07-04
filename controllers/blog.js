@@ -1,5 +1,8 @@
 const Blog = require('../models/blog');
 const Comment = require('../models/comment');
+const xss = require('xss');
+
+const BLOGS_PER_PAGE = 6;
 
 function renderAddBlogPage(req, res) {
   return res.render('addBlog', {
@@ -11,11 +14,7 @@ async function handleGetBlogById(req, res) {
   try {
     const blog = await Blog.findById(req.params.id).populate("createdBy");
     if (!blog) {
-      return res.render('home', {
-        user: req.user,
-        blogs: await Blog.find({ status: 'published' }).sort({ createdAt: -1 }),
-        error: "Blog not found.",
-      });
+      return res.redirect('/?error=Blog+not+found');
     }
     
     // Increment views
@@ -30,11 +29,7 @@ async function handleGetBlogById(req, res) {
     });
   } catch (err) {
     console.error("Error fetching blog:", err);
-    return res.render('home', {
-      user: req.user,
-      blogs: await Blog.find({ status: 'published' }).sort({ createdAt: -1 }),
-      error: "Invalid Blog URL or Blog not found.",
-    });
+    return res.redirect('/?error=Invalid+Blog+URL');
   }
 }
 
@@ -46,7 +41,7 @@ async function handleCreateComment(req, res) {
 
   try {
     await Comment.create({
-      content,
+      content: xss(content),
       blogId: req.params.blogId,
       createdBy: req.user._id,
     });
@@ -78,11 +73,11 @@ async function handleCreateBlog(req, res) {
 
   try {
     const blog = await Blog.create({
-      body,
-      title,
+      body: xss(body),
+      title: xss(title),
       status: status || 'published',
-      category: category || '',
-      tags: tagsArray,
+      category: category ? xss(category) : '',
+      tags: tagsArray.map(tag => xss(tag)),
       createdBy: req.user._id,
       coverImageURL: `/uploads/${req.file.filename}`,
     });
@@ -96,10 +91,16 @@ async function handleCreateBlog(req, res) {
   }
 }
 
+function isOwnerOrAdmin(blog, user) {
+  if (!user) return false;
+  if (user.role === 'admin') return true;
+  return blog.createdBy.toString() === user._id.toString();
+}
+
 async function renderEditBlogPage(req, res) {
   try {
     const blog = await Blog.findById(req.params.id);
-    if (!blog || blog.createdBy.toString() !== req.user._id.toString()) {
+    if (!blog || !isOwnerOrAdmin(blog, req.user)) {
       return res.redirect('/');
     }
     return res.render('editBlog', {
@@ -116,17 +117,17 @@ async function handleUpdateBlog(req, res) {
   const { title, body, status, category, tags } = req.body;
   try {
     const blog = await Blog.findById(req.params.id);
-    if (!blog || blog.createdBy.toString() !== req.user._id.toString()) {
+    if (!blog || !isOwnerOrAdmin(blog, req.user)) {
       return res.redirect('/');
     }
 
-    blog.title = title;
-    blog.body = body;
+    blog.title = xss(title);
+    blog.body = xss(body);
     blog.status = status || 'published';
-    blog.category = category || '';
+    blog.category = category ? xss(category) : '';
     
     if (tags) {
-      blog.tags = tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+      blog.tags = tags.split(',').map(tag => xss(tag.trim())).filter(tag => tag);
     } else {
       blog.tags = [];
     }
@@ -146,7 +147,7 @@ async function handleUpdateBlog(req, res) {
 async function handleDeleteBlog(req, res) {
   try {
     const blog = await Blog.findById(req.params.id);
-    if (!blog || blog.createdBy.toString() !== req.user._id.toString()) {
+    if (!blog || !isOwnerOrAdmin(blog, req.user)) {
       return res.redirect('/');
     }
     
@@ -162,13 +163,45 @@ async function handleDeleteBlog(req, res) {
 
 async function handleMyBlogs(req, res) {
   try {
-    const blogs = await Blog.find({ createdBy: req.user._id }).sort({ createdAt: -1 });
+    const page = parseInt(req.query.page) || 1;
+    const totalBlogs = await Blog.countDocuments({ createdBy: req.user._id });
+    const totalPages = Math.max(1, Math.ceil(totalBlogs / BLOGS_PER_PAGE));
+
+    const blogs = await Blog.find({ createdBy: req.user._id })
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * BLOGS_PER_PAGE)
+      .limit(BLOGS_PER_PAGE);
+
     return res.render('myBlogs', {
       user: req.user,
       blogs,
+      currentPage: page,
+      totalPages,
     });
   } catch (err) {
     console.error(err);
+    return res.redirect('/');
+  }
+}
+
+async function handleToggleLike(req, res) {
+  try {
+    const blog = await Blog.findById(req.params.id);
+    if (!blog) return res.redirect('/');
+
+    const userId = req.user._id.toString();
+    const likeIndex = blog.likes.findIndex(id => id.toString() === userId);
+
+    if (likeIndex === -1) {
+      blog.likes.push(req.user._id);
+    } else {
+      blog.likes.splice(likeIndex, 1);
+    }
+
+    await blog.save();
+    return res.redirect(`/blog/${blog._id}`);
+  } catch (err) {
+    console.error("Error toggling like:", err);
     return res.redirect('/');
   }
 }
@@ -182,4 +215,6 @@ module.exports = {
   handleUpdateBlog,
   handleDeleteBlog,
   handleMyBlogs,
+  handleToggleLike,
+  BLOGS_PER_PAGE,
 };

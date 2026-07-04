@@ -33,7 +33,11 @@ const blogSchema = new Schema({
     views: {
         type: Number,
         default: 0
-    }
+    },
+    likes: [{
+        type: Schema.Types.ObjectId,
+        ref: "User"
+    }]
 },
     { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );

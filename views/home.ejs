@@ -2,34 +2,218 @@
 <html lang="en">
   <head>
     <%- include('./partials/head') %>
-    <title>Homepage</title>
+    <title>Blog Chunks — Read. Write. Create</title>
+    <meta name="description" content="Discover insightful articles on technology, lifestyle, and everything even some random in between. Join the Blog Chunks community today.">
   </head>
   <body>
     <%- include('./partials/nav') %>
 
-    <div class="container mt-3">
-      <div class="row row-cols-4">
-        <% blogs.forEach(blog => { %>
-        <div class="col">
-          <div class="card col" style="width: 18rem">
-            <img src="<%= blog.coverImageURL %>" class="card-img-top" />
-            <div class="card-body">
-              <h5 class="card-title"><%= blog.title %></h5>
-              <p class="card-text text-muted mb-2" style="font-size: 0.9em;">
-                <span><%= blog.views %> Views</span> &bull; 
-                <span><%= blog.readingTime %> Min Read</span>
-              </p>
-              <% if (blog.category) { %>
-                <span class="badge bg-primary mb-2"><%= blog.category %></span>
-              <% } %>
-              <br/>
-              <a href="/blog/<%= blog._id %>" class="btn btn-primary mt-2">View</a>
+    <% if (!locals.user) { %>
+    <section class="hero-section">
+      <div class="container position-relative" style="z-index: 1;">
+        <div class="row align-items-center">
+          <div class="col-lg-7">
+            <span class="hero-badge">
+              <i class="bi bi-stars"></i> A space for great ideas
+            </span>
+            <h1 class="hero-title">
+              Stories that <span class="hero-highlight"> express </span><br>
+              Ideas that <span class="hero-highlight">matters.</span>
+            </h1>
+            <p class="hero-subtitle">
+              Discover thoughtful articles on tech, creativity, culture and every thoughts about here and there, Written by people who care about their craft.
+            </p>
+            <div class="hero-cta-group">
+              <a href="/user/signup" class="btn-hero-primary">
+                <i class="bi bi-pencil-square"></i> Start Writing
+              </a>
+              <a href="#latest" class="btn-hero-ghost">
+                <i class="bi bi-arrow-down-circle"></i> Browse Articles
+              </a>
+            </div>
+            <div class="hero-stats">
+              <div>
+                <div class="hero-stat-num"><%= totalBlogs %>+</div>
+                <div class="hero-stat-label">Articles</div>
+              </div>
+              <div>
+                <div class="hero-stat-num">Free</div>
+                <div class="hero-stat-label">Always</div>
+              </div>
+              <div>
+                <div class="hero-stat-num"><i class="bi bi-heart-fill" style="font-size: 1.5rem; color: #f43f5e;"></i></div>
+                <div class="hero-stat-label">Community Driven</div>
+              </div>
             </div>
           </div>
         </div>
+      </div>
+    </section>
+    <% } else { %>
+    <!-- Logged-in greeting banner -->
+    <section style="background: linear-gradient(135deg, #0f172a, #1e1b4b); padding: 2rem 0; border-bottom: 1px solid rgba(255,255,255,0.07);">
+      <div class="container d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-3">
+          <img src="<%= user.profileImageURL %>" width="42" height="42" class="rounded-circle" style="object-fit:cover; border: 2px solid rgba(99,102,241,0.5);">
+          <div>
+            <p class="mb-0" style="color: rgba(255,255,255,0.5); font-size: 0.8rem;">Welcome back,</p>
+            <p class="mb-0 fw-bold" style="color: #fff; font-size: 1.05rem;"><%= user.fullName %></p>
+          </div>
+        </div>
+        <a href="/blog/add-new" class="btn-hero-primary" style="font-size: 0.875rem; padding: 0.5rem 1.25rem;">
+          <i class="bi bi-plus-lg"></i> New Article
+        </a>
+      </div>
+    </section>
+    <% } %>
+
+    <main class="container py-5" id="latest">
+
+      <!-- Section header -->
+      <div class="section-header">
+        <h2 class="section-title">Latest Articles</h2>
+        <% if (totalPages > 1) { %>
+          <span class="text-muted" style="font-size: 0.875rem;">
+            Page <%= currentPage %> of <%= totalPages %>
+          </span>
+        <% } %>
+      </div>
+
+      <% if (blogs.length === 0) { %>
+      <!-- Empty state -->
+      <div class="empty-state">
+        <div class="empty-state-icon"><i class="bi bi-journal-x"></i></div>
+        <h3>No articles yet</h3>
+        <p>Be the first to share your story with the world.</p>
+        <% if (locals.user) { %>
+          <a href="/blog/add-new" class="btn-hero-primary">
+            <i class="bi bi-pencil-square"></i> Write your first post
+          </a>
+        <% } else { %>
+          <a href="/user/signup" class="btn-hero-primary">
+            <i class="bi bi-person-plus"></i> Join & write
+          </a>
+        <% } %>
+      </div>
+
+      <% } else { %>
+
+      <!-- Card grid -->
+      <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 blog-grid">
+        <% blogs.forEach((blog, i) => { %>
+        <div class="col fade-up">
+          <article class="blog-card" onclick="window.location='/blog/<%= blog._id %>'" style="cursor: pointer;">
+            <!-- Cover image -->
+            <div class="blog-card-img-wrap">
+              <% if (blog.coverImageURL) { %>
+                <img class="blog-card-img" src="<%= blog.coverImageURL %>" alt="<%= blog.title %>" loading="lazy"/>
+              <% } else { %>
+                <div class="w-100 h-100 d-flex align-items-center justify-content-center" style="background: linear-gradient(135deg, #e0e7ff, #ede9fe);">
+                  <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+                </div>
+              <% } %>
+              <% if (blog.category) { %>
+                <span class="blog-card-category"><%= blog.category %></span>
+              <% } %>
+            </div>
+
+            <!-- Body -->
+            <div class="blog-card-body">
+              <!-- Author & date row -->
+              <div class="blog-card-author">
+                <% if (blog.createdBy && blog.createdBy.profileImageURL) { %>
+                  <img class="blog-card-author-img" src="<%= blog.createdBy.profileImageURL %>" alt="<%= blog.createdBy.fullName %>"/>
+                <% } %>
+                <span class="blog-card-author-name">
+                  <%= blog.createdBy ? blog.createdBy.fullName : 'Anonymous' %>
+                </span>
+                <span class="blog-card-date ms-auto">
+                  <%= new Date(blog.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) %>
+                </span>
+              </div>
+
+              <!-- Title -->
+              <h3 class="blog-card-title"><%= blog.title %></h3>
+
+              <!-- Excerpt from body -->
+              <p class="blog-card-excerpt">
+                <%= blog.body.replace(/<[^>]*>/g, '').substring(0, 140) %>...
+              </p>
+
+              <!-- Tags -->
+              <% if (blog.tags && blog.tags.length > 0) { %>
+                <div class="d-flex flex-wrap gap-1 mb-2">
+                  <% blog.tags.slice(0, 3).forEach(tag => { %>
+                    <span class="tag-pill">#<%= tag %></span>
+                  <% }) %>
+                </div>
+              <% } %>
+
+              <!-- Footer -->
+              <div class="blog-card-footer">
+                <div class="blog-card-meta">
+                  <span><i class="bi bi-eye"></i> <%= blog.views %></span>
+                  <span><i class="bi bi-clock"></i> <%= blog.readingTime %> min</span>
+                  <% if (blog.likes) { %>
+                    <span><i class="bi bi-heart"></i> <%= blog.likes.length %></span>
+                  <% } %>
+                </div>
+                <a href="/blog/<%= blog._id %>" class="blog-card-read-btn" onclick="event.stopPropagation()">
+                  Read <i class="bi bi-arrow-right"></i>
+                </a>
+              </div>
+            </div>
+          </article>
+        </div>
         <% }) %>
       </div>
-    </div>
+
+      <% if (totalPages > 1) { %>
+      <nav class="pagination-wrap" aria-label="Page navigation">
+        <!-- Prev -->
+        <a href="/?page=<%= currentPage - 1 %>"
+           class="page-btn <%= currentPage <= 1 ? 'disabled' : '' %>"
+           aria-label="Previous">
+          <i class="bi bi-chevron-left"></i>
+        </a>
+
+        <!-- Page numbers -->
+        <% for (let p = 1; p <= totalPages; p++) { %>
+          <% if (p === 1 || p === totalPages || (p >= currentPage - 1 && p <= currentPage + 1)) { %>
+            <a href="/?page=<%= p %>" class="page-btn <%= p === currentPage ? 'active' : '' %>"><%= p %></a>
+          <% } else if (p === currentPage - 2 || p === currentPage + 2) { %>
+            <span class="page-btn disabled">…</span>
+          <% } %>
+        <% } %>
+
+        <!-- Next -->
+        <a href="/?page=<%= currentPage + 1 %>"
+           class="page-btn <%= currentPage >= totalPages ? 'disabled' : '' %>"
+           aria-label="Next">
+          <i class="bi bi-chevron-right"></i>
+        </a>
+      </nav>
+      <% } %>
+
+      <% } %>
+    </main>
+
+    <!-- Footer -->
+    <footer style="border-top: 1px solid var(--border); padding: 2rem 0; margin-top: 2rem;">
+      <div class="container d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <p class="mb-0" style="font-size: 0.85rem; color: var(--text-muted);">
+          © <%= new Date().getFullYear() %> <strong>Blog Chunks</strong> · Built with ❤️ By. Rizan Bhandari
+        </p>
+        <div class="d-flex gap-3">
+          <a href="/" style="font-size: 0.85rem; color: var(--text-muted); text-decoration: none;">Home</a>
+          <% if (locals.user) { %>
+            <a href="/blog/add-new" style="font-size: 0.85rem; color: var(--text-muted); text-decoration: none;">Write</a>
+          <% } else { %>
+            <a href="/user/signup" style="font-size: 0.85rem; color: var(--text-muted); text-decoration: none;">Join</a>
+          <% } %>
+        </div>
+      </div>
+    </footer>
 
     <%- include('./partials/script') %>
   </body>

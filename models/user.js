@@ -29,18 +29,33 @@ const userSchema = new Schema({
         enum: ['user', 'admin'],
         default: 'user',
     },
+    bio: {
+        type: String,
+        default: '',
+    },
+    twitterURL: {
+        type: String,
+        default: '',
+    },
+    githubURL: {
+        type: String,
+        default: '',
+    },
+    websiteURL: {
+        type: String,
+        default: '',
+    },
 },
 {
     timestamps: true,
 });
 
-userSchema.pre('save', async function(next) {
+userSchema.pre('save', async function() {
     const user = this;
-    if (!user.isModified('password')) return next();
+    if (!user.isModified('password')) return;
 
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(user.password, salt);
-    next();
 });
 
 userSchema.static('matchPasswordAndGenerateToken', async function (email, password) { 

@@ -34,13 +34,7 @@
           <label for="body">Body</label>
           <textarea name="body" class="form-control" id="body" rows="5"><%= blog.body %></textarea>
         </div>
-        <div class="mb-3">
-          <label for="status" class="form-label">Status</label>
-          <select name="status" id="status" class="form-control">
-            <option value="published" <%= blog.status === 'published' ? 'selected' : '' %>>Published</option>
-            <option value="draft" <%= blog.status === 'draft' ? 'selected' : '' %>>Draft</option>
-          </select>
-        </div>
+
         <div class="mb-3">
           <label for="category" class="form-label">Category</label>
           <input type="text" class="form-control" id="category" name="category" value="<%= blog.category || '' %>" />
@@ -49,8 +43,9 @@
           <label for="tags" class="form-label">Tags (comma-separated)</label>
           <input type="text" class="form-control" id="tags" name="tags" value="<%= blog.tags ? blog.tags.join(', ') : '' %>" />
         </div>
-        <div class="mb-3">
-          <button class="btn btn-primary">Update</button>
+        <div class="mb-3 d-flex gap-2">
+          <button type="submit" name="action" value="publish" class="btn btn-primary">Publish Updates</button>
+          <button type="submit" name="action" value="draft" class="btn btn-outline-secondary">Revert to Draft</button>
         </div>
       </form>
     </div>

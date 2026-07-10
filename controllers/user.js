@@ -1,5 +1,7 @@
 const User = require('../models/user');
 const Blog = require('../models/blog');
+const { createTokenForUser } = require('../services/auth');
+const xss = require('xss');
 
 async function handleSignin(req, res) {
   const { email, password } = req.body;
@@ -19,6 +21,20 @@ async function handleSignup(req, res) {
   if (!fullName || !email || !password) {
     return res.render("signup", {
       error: "All fields are required",
+    });
+  }
+
+  // Basic email validation regex
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.render("signup", {
+      error: "Invalid email format.",
+    });
+  }
+
+  if (password.length < 6) {
+    return res.render("signup", {
+      error: "Password must be at least 6 characters long.",
     });
   }
   
@@ -65,27 +81,102 @@ async function handleGetProfile(req, res) {
   }
 }
 
-function renderSettingsPage(req, res) {
-  return res.render('settings', {
-    user: req.user,
-  });
+async function renderSettingsPage(req, res) {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.redirect('/user/signin');
+    return res.render('settings', {
+      user,
+    });
+  } catch (err) {
+    console.error("Error rendering settings page:", err);
+    return res.redirect('/');
+  }
 }
 
 async function handleUpdateSettings(req, res) {
-  const { fullName } = req.body;
+  const fullName = req.body.fullName ? req.body.fullName.trim() : "";
+  const bio = req.body.bio ? req.body.bio.trim() : "";
+  const twitterURL = req.body.twitterURL ? req.body.twitterURL.trim() : "";
+  const githubURL = req.body.githubURL ? req.body.githubURL.trim() : "";
+  const websiteURL = req.body.websiteURL ? req.body.websiteURL.trim() : "";
+  const password = req.body.password;
+
+  let user;
   try {
-    const updateData = {};
-    if (fullName) updateData.fullName = fullName;
-    if (req.file) updateData.profileImageURL = `/uploads/${req.file.filename}`;
+    user = await User.findById(req.user._id);
+    if (!user) return res.redirect('/user/signin');
+  } catch (err) {
+    console.error("Error finding user:", err);
+    return res.redirect('/');
+  }
 
-    await User.findByIdAndUpdate(req.user._id, updateData);
+  if (!fullName) {
+    return res.render('settings', {
+      user,
+      error: "Full name is required.",
+    });
+  }
 
-    return res.redirect(`/user/profile/${req.user._id}`);
+  if (bio.length > 200) {
+    return res.render('settings', {
+      user,
+      error: "Bio must be less than 200 characters.",
+    });
+  }
+
+  const urlRegex = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$/;
+  if (twitterURL && !urlRegex.test(twitterURL)) {
+    return res.render('settings', {
+      user,
+      error: "Invalid Twitter/X URL format.",
+    });
+  }
+  if (githubURL && !urlRegex.test(githubURL)) {
+    return res.render('settings', {
+      user,
+      error: "Invalid GitHub URL format.",
+    });
+  }
+  if (websiteURL && !urlRegex.test(websiteURL)) {
+    return res.render('settings', {
+      user,
+      error: "Invalid Website URL format.",
+    });
+  }
+
+  if (password && password.length < 6) {
+    return res.render('settings', {
+      user,
+      error: "Password must be at least 6 characters long.",
+    });
+  }
+
+  try {
+    user.fullName = xss(fullName);
+    user.bio = xss(bio);
+    user.twitterURL = twitterURL ? xss(twitterURL) : "";
+    user.githubURL = githubURL ? xss(githubURL) : "";
+    user.websiteURL = websiteURL ? xss(websiteURL) : "";
+
+    if (req.file) {
+      user.profileImageURL = `/uploads/${req.file.filename}`;
+    }
+
+    if (password) {
+      user.password = password; // Trigger hashing in pre-save hook
+    }
+
+    await user.save();
+
+    // Re-generate token and update cookie
+    const token = createTokenForUser(user);
+    return res.cookie("token", token, { httpOnly: true }).redirect(`/user/profile/${user._id}`);
   } catch (err) {
     console.error("Error updating settings:", err);
     return res.render('settings', {
-      user: req.user,
-      error: "Failed to update settings.",
+      user,
+      error: "Failed to update settings. Please try again.",
     });
   }
 }

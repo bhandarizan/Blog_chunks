@@ -33,13 +33,7 @@
           <label for="body">Body</label>
           <textarea name="body" class="form-control" id="body" rows="5"></textarea>
         </div>
-        <div class="mb-3">
-          <label for="status" class="form-label">Status</label>
-          <select name="status" id="status" class="form-control">
-            <option value="published">Published</option>
-            <option value="draft">Draft</option>
-          </select>
-        </div>
+
         <div class="mb-3">
           <label for="category" class="form-label">Category</label>
           <input type="text" class="form-control" id="category" name="category" placeholder="e.g. Technology" />
@@ -48,8 +42,9 @@
           <label for="tags" class="form-label">Tags (comma-separated)</label>
           <input type="text" class="form-control" id="tags" name="tags" placeholder="e.g. javascript, webdev" />
         </div>
-        <div class="mb-3">
-          <button class="btn btn-primary">Submit</button>
+        <div class="mb-3 d-flex gap-2">
+          <button type="submit" name="action" value="publish" class="btn btn-primary">Publish</button>
+          <button type="submit" name="action" value="draft" class="btn btn-outline-secondary">Save Draft</button>
         </div>
       </form>
     </div>

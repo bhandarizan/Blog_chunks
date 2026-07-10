@@ -39,6 +39,10 @@ async function handleCreateComment(req, res) {
     return res.redirect(`/blog/${req.params.blogId}`);
   }
 
+  if (content.length > 500) {
+    return res.redirect(`/blog/${req.params.blogId}?error=Comment+too+long`);
+  }
+
   try {
     await Comment.create({
       content: xss(content),
@@ -53,12 +57,28 @@ async function handleCreateComment(req, res) {
 }
 
 async function handleCreateBlog(req, res) {
-  const { title, body, status, category, tags } = req.body;
+  const title = req.body.title ? req.body.title.trim() : "";
+  const body = req.body.body ? req.body.body.trim() : "";
+  const action = req.body.action || 'draft'; // defaults to draft if not specified
   
   if (!title || !body) {
     return res.render('addBlog', {
       user: req.user,
       error: "Title and body are required.",
+    });
+  }
+
+  if (title.length > 150) {
+    return res.render('addBlog', {
+      user: req.user,
+      error: "Title must be less than 150 characters.",
+    });
+  }
+
+  if (body.length > 10000) {
+    return res.render('addBlog', {
+      user: req.user,
+      error: "Body must be less than 10000 characters.",
     });
   }
 
@@ -69,13 +89,18 @@ async function handleCreateBlog(req, res) {
     });
   }
 
+  const category = req.body.category ? req.body.category.trim() : '';
+  const tags = req.body.tags;
   const tagsArray = tags ? tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+
+  // System dynamic status generation based on the button clicked
+  const status = action === 'publish' ? 'published' : 'draft';
 
   try {
     const blog = await Blog.create({
       body: xss(body),
       title: xss(title),
-      status: status || 'published',
+      status: status,
       category: category ? xss(category) : '',
       tags: tagsArray.map(tag => xss(tag)),
       createdBy: req.user._id,
@@ -114,7 +139,25 @@ async function renderEditBlogPage(req, res) {
 }
 
 async function handleUpdateBlog(req, res) {
-  const { title, body, status, category, tags } = req.body;
+  const title = req.body.title ? req.body.title.trim() : "";
+  const body = req.body.body ? req.body.body.trim() : "";
+  const action = req.body.action || 'draft';
+  
+  if (!title || !body) {
+    return res.redirect(`/blog/edit/${req.params.id}?error=Title+and+body+are+required`);
+  }
+
+  if (title.length > 150) {
+    return res.redirect(`/blog/edit/${req.params.id}?error=Title+too+long`);
+  }
+
+  if (body.length > 10000) {
+    return res.redirect(`/blog/edit/${req.params.id}?error=Body+too+long`);
+  }
+
+  const category = req.body.category ? req.body.category.trim() : '';
+  const tags = req.body.tags;
+
   try {
     const blog = await Blog.findById(req.params.id);
     if (!blog || !isOwnerOrAdmin(blog, req.user)) {
@@ -123,7 +166,7 @@ async function handleUpdateBlog(req, res) {
 
     blog.title = xss(title);
     blog.body = xss(body);
-    blog.status = status || 'published';
+    blog.status = action === 'publish' ? 'published' : 'draft';
     blog.category = category ? xss(category) : '';
     
     if (tags) {

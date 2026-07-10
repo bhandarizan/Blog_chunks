@@ -19,12 +19,31 @@
           </div>
         <% } %>
       </div>
-      <div class="text-muted mb-3 d-flex align-items-center gap-3">
-        <span><%= blog.views %> Views</span>
-        <span><%= blog.readingTime %> Min Read</span>
+      <div class="text-muted mb-3 d-flex align-items-center gap-3 flex-wrap">
+        <span><i class="bi bi-eye me-1"></i><%= blog.views %> Views</span>
+        <span><i class="bi bi-clock me-1"></i><%= blog.readingTime %> Min Read</span>
         <% if (blog.category) { %>
           <span class="badge bg-primary"><%= blog.category %></span>
         <% } %>
+        <div class="ms-auto d-flex align-items-center gap-2">
+          <% if (locals.user) { %>
+            <form action="/blog/<%= blog._id %>/like" method="post" class="m-0">
+              <button type="submit" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1 border-0 bg-transparent">
+                <% if (blog.likes && blog.likes.some(like => like.toString() === locals.user._id.toString())) { %>
+                  <i class="bi bi-heart-fill text-danger fs-5"></i>
+                <% } else { %>
+                  <i class="bi bi-heart text-danger fs-5"></i>
+                <% } %>
+                <span class="text-dark fw-semibold"><%= blog.likes ? blog.likes.length : 0 %> Likes</span>
+              </button>
+            </form>
+          <% } else { %>
+            <div class="d-flex align-items-center gap-1">
+              <i class="bi bi-heart text-muted fs-5"></i>
+              <span class="text-muted fw-semibold"><%= blog.likes ? blog.likes.length : 0 %> Likes</span>
+            </div>
+          <% } %>
+        </div>
       </div>
       <% if (blog.tags && blog.tags.length > 0) { %>
         <div class="mb-3">
@@ -38,8 +57,18 @@
     </div>
 
     <div class="container mt-4">
-      <img src="<%= blog.createdBy.profileImageURL %>" width="50px" /> <%=
-      blog.createdBy.fullName %>
+      <hr/>
+      <div class="d-flex align-items-center gap-3">
+        <a href="/user/profile/<%= blog.createdBy._id %>">
+          <img src="<%= blog.createdBy.profileImageURL %>" width="50" height="50" class="rounded-circle border border-2 border-primary" style="object-fit: cover;" />
+        </a>
+        <div>
+          <span class="text-muted d-block" style="font-size: 0.85rem;">Written by</span>
+          <a href="/user/profile/<%= blog.createdBy._id %>" class="fw-bold text-decoration-none text-dark fs-5">
+            <%= blog.createdBy.fullName %>
+          </a>
+        </div>
+      </div>
     </div>
 
     <div class="container mt-3">
@@ -66,11 +95,15 @@
         <% comments.forEach(comment => { %>
         <div class="card mb-3 border-0">
           <div class="card-body bg-light rounded d-flex gap-3 align-items-start">
-            <img src="<%= comment.createdBy.profileImageURL %>" width="50" class="rounded-circle" />
-            <div>
-              <div class="d-flex justify-content-between align-items-start">
-                <h6 class="mb-1"><%= comment.createdBy.fullName %></h6>
-              </div>
+             <a href="/user/profile/<%= comment.createdBy._id %>">
+               <img src="<%= comment.createdBy.profileImageURL %>" width="50" height="50" class="rounded-circle" style="object-fit: cover;" />
+             </a>
+             <div>
+               <div class="d-flex justify-content-between align-items-start">
+                 <a href="/user/profile/<%= comment.createdBy._id %>" class="text-decoration-none text-dark">
+                   <h6 class="mb-1 fw-bold"><%= comment.createdBy.fullName %></h6>
+                 </a>
+               </div>
               <small class="text-muted d-block mb-2">
                 <time class="comment-time" datetime="<%= new Date(comment.createdAt).toISOString() %>"><%= new Date(comment.createdAt).toLocaleString() %></time>
               </small>

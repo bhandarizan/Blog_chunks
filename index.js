@@ -38,13 +38,15 @@ app.get('/', async(req, res) => {
   const allBlogs = await Blog.find({ status: 'published' })
     .sort({ createdAt: -1 })
     .skip((page - 1) * BLOGS_PER_PAGE)
-    .limit(BLOGS_PER_PAGE);
+    .limit(BLOGS_PER_PAGE)
+    .populate('createdBy', 'fullName profileImageURL');
 
   res.render('home',{
     user: req.user,
     blogs: allBlogs,
     currentPage: page,
     totalPages,
+    totalBlogs,
     error: req.query.error || null,
   });
 });

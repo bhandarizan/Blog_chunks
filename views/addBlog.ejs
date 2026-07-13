@@ -50,5 +50,34 @@
     </div>
 
     <%- include('./partials/script') %>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const form = document.querySelector('form[action="/blog"]');
+        const fields = ['title', 'body', 'category', 'tags'];
+        
+        // Restore values
+        fields.forEach(field => {
+          const el = document.getElementById(field);
+          if (el) {
+            const savedValue = localStorage.getItem(`blogDraft_${field}`);
+            if (savedValue) {
+              el.value = savedValue;
+            }
+            
+            // Save on input
+            el.addEventListener('input', () => {
+              localStorage.setItem(`blogDraft_${field}`, el.value);
+            });
+          }
+        });
+
+        // Clear values on submit
+        form.addEventListener('submit', () => {
+          fields.forEach(field => {
+            localStorage.removeItem(`blogDraft_${field}`);
+          });
+        });
+      });
+    </script>
   </body>
 </html>

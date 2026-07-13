@@ -15,8 +15,7 @@ async function handleGetBlogById(req, res) {
     const blog = await Blog.findById(req.params.id).populate("createdBy");
     if (!blog) {
       return res.redirect('/?error=Blog+not+found');
-    }
-    
+    }    
     // Increment views
     blog.views += 1;
     await blog.save();
@@ -68,24 +67,17 @@ async function handleCreateBlog(req, res) {
     });
   }
 
-  if (title.length > 150) {
+  if (title.length > 500) {
     return res.render('addBlog', {
       user: req.user,
-      error: "Title must be less than 150 characters.",
+      error: "Title must be less than 500 characters.",
     });
   }
 
-  if (body.length > 10000) {
+  if (body.length > 50000) {
     return res.render('addBlog', {
       user: req.user,
-      error: "Body must be less than 10000 characters.",
-    });
-  }
-
-  if (!req.file) {
-    return res.render('addBlog', {
-      user: req.user,
-      error: "Please upload a cover image.",
+      error: "Body must be less than 50000 characters.",
     });
   }
 
@@ -97,15 +89,20 @@ async function handleCreateBlog(req, res) {
   const status = action === 'publish' ? 'published' : 'draft';
 
   try {
-    const blog = await Blog.create({
+    const blogData = {
       body: xss(body),
       title: xss(title),
       status: status,
       category: category ? xss(category) : '',
       tags: tagsArray.map(tag => xss(tag)),
       createdBy: req.user._id,
-      coverImageURL: `/uploads/${req.file.filename}`,
-    });
+    };
+    
+    if (req.file) {
+      blogData.coverImageURL = `/uploads/${req.file.filename}`;
+    }
+
+    const blog = await Blog.create(blogData);
     return res.redirect(`/blog/${blog._id}`);
   } catch (err) {
     console.error("Error creating blog:", err);

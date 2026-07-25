@@ -25,6 +25,7 @@ async function handleGetBlogById(req, res) {
       user: req.user,
       blog,
       comments,
+      reqPage: req.query.p || 1,
     });
   } catch (err) {
     console.error("Error fetching blog:", err);
@@ -85,7 +86,11 @@ async function handleCreateBlog(req, res) {
   const tags = req.body.tags;
   const tagsArray = tags ? tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
 
-  // System dynamic status generation based on the button clicked
+  const fontFamily = req.body.fontFamily ? req.body.fontFamily.trim() : 'Inter';
+  const fontSize = req.body.fontSize ? req.body.fontSize.trim() : 'medium';
+  const lineHeight = req.body.lineHeight ? req.body.lineHeight.trim() : 'relaxed';
+  const fontColor = req.body.fontColor ? req.body.fontColor.trim() : '#334155';
+
   const status = action === 'publish' ? 'published' : 'draft';
 
   try {
@@ -95,11 +100,21 @@ async function handleCreateBlog(req, res) {
       status: status,
       category: category ? xss(category) : '',
       tags: tagsArray.map(tag => xss(tag)),
+      fontFamily: xss(fontFamily),
+      fontSize: xss(fontSize),
+      lineHeight: xss(lineHeight),
+      fontColor: xss(fontColor),
       createdBy: req.user._id,
     };
     
-    if (req.file) {
+    if (req.files && req.files.coverImage && req.files.coverImage.length > 0) {
+      blogData.coverImageURL = `/uploads/${req.files.coverImage[0].filename}`;
+    } else if (req.file) {
       blogData.coverImageURL = `/uploads/${req.file.filename}`;
+    }
+
+    if (req.files && req.files.fontFile && req.files.fontFile.length > 0) {
+      blogData.fontUrl = `/uploads/${req.files.fontFile[0].filename}`;
     }
 
     const blog = await Blog.create(blogData);
@@ -144,16 +159,20 @@ async function handleUpdateBlog(req, res) {
     return res.redirect(`/blog/edit/${req.params.id}?error=Title+and+body+are+required`);
   }
 
-  if (title.length > 150) {
+  if (title.length > 500) {
     return res.redirect(`/blog/edit/${req.params.id}?error=Title+too+long`);
   }
 
-  if (body.length > 10000) {
+  if (body.length > 50000) {
     return res.redirect(`/blog/edit/${req.params.id}?error=Body+too+long`);
   }
 
   const category = req.body.category ? req.body.category.trim() : '';
   const tags = req.body.tags;
+  const fontFamily = req.body.fontFamily ? req.body.fontFamily.trim() : 'Inter';
+  const fontSize = req.body.fontSize ? req.body.fontSize.trim() : 'medium';
+  const lineHeight = req.body.lineHeight ? req.body.lineHeight.trim() : 'relaxed';
+  const fontColor = req.body.fontColor ? req.body.fontColor.trim() : '#334155';
 
   try {
     const blog = await Blog.findById(req.params.id);
@@ -165,6 +184,10 @@ async function handleUpdateBlog(req, res) {
     blog.body = xss(body);
     blog.status = action === 'publish' ? 'published' : 'draft';
     blog.category = category ? xss(category) : '';
+    blog.fontFamily = xss(fontFamily);
+    blog.fontSize = xss(fontSize);
+    blog.lineHeight = xss(lineHeight);
+    blog.fontColor = xss(fontColor);
     
     if (tags) {
       blog.tags = tags.split(',').map(tag => xss(tag.trim())).filter(tag => tag);
@@ -172,8 +195,14 @@ async function handleUpdateBlog(req, res) {
       blog.tags = [];
     }
 
-    if (req.file) {
+    if (req.files && req.files.coverImage && req.files.coverImage.length > 0) {
+      blog.coverImageURL = `/uploads/${req.files.coverImage[0].filename}`;
+    } else if (req.file) {
       blog.coverImageURL = `/uploads/${req.file.filename}`;
+    }
+
+    if (req.files && req.files.fontFile && req.files.fontFile.length > 0) {
+      blog.fontUrl = `/uploads/${req.files.fontFile[0].filename}`;
     }
 
     await blog.save();

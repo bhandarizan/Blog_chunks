@@ -31,24 +31,88 @@ app.use(express.static(path.resolve('./public')))
 const { BLOGS_PER_PAGE } = require('./controllers/blog');
 
 app.get('/', async(req, res) => { 
-  const page = parseInt(req.query.page) || 1;
-  const totalBlogs = await Blog.countDocuments({ status: 'published' });
-  const totalPages = Math.max(1, Math.ceil(totalBlogs / BLOGS_PER_PAGE));
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const category = req.query.category ? req.query.category.trim() : '';
+    const sort = req.query.sort || 'latest';
+    const searchQuery = req.query.q ? req.query.q.trim() : '';
 
-  const allBlogs = await Blog.find({ status: 'published' })
-    .sort({ createdAt: -1 })
-    .skip((page - 1) * BLOGS_PER_PAGE)
-    .limit(BLOGS_PER_PAGE)
-    .populate('createdBy', 'fullName profileImageURL');
+    const filter = { status: 'published' };
+    
+    if (category) {
+      filter.category = { $regex: new RegExp(`^${category}$`, 'i') };
+    }
 
-  res.render('home',{
-    user: req.user,
-    blogs: allBlogs,
-    currentPage: page,
-    totalPages,
-    totalBlogs,
-    error: req.query.error || null,
-  });
+    if (searchQuery) {
+      const searchRegex = new RegExp(searchQuery, 'i');
+      filter.$or = [
+        { title: searchRegex },
+        { body: searchRegex },
+        { tags: { $in: [searchRegex] } }
+      ];
+    }
+
+    let sortOptions = { createdAt: -1 };
+    if (sort === 'popular') {
+      sortOptions = { views: -1, createdAt: -1 };
+    } else if (sort === 'oldest') {
+      sortOptions = { createdAt: 1 };
+    }
+
+    const categories = await Blog.distinct('category', { status: 'published', category: { $ne: null } });
+    const filteredCategories = categories.filter(c => c && c.trim().length > 0);
+
+    let blogs;
+    let totalBlogs = await Blog.countDocuments(filter);
+
+    if (sort === 'liked') {
+      const pipeline = [
+        { $match: filter },
+        { $addFields: { likesCount: { $size: { $ifNull: ["$likes", []] } } } },
+        { $sort: { likesCount: -1, createdAt: -1 } },
+        { $skip: (page - 1) * BLOGS_PER_PAGE },
+        { $limit: BLOGS_PER_PAGE }
+      ];
+
+      blogs = await Blog.aggregate(pipeline);
+      await Blog.populate(blogs, { path: 'createdBy', select: 'fullName profileImageURL' });
+    } else {
+      blogs = await Blog.find(filter)
+        .sort(sortOptions)
+        .skip((page - 1) * BLOGS_PER_PAGE)
+        .limit(BLOGS_PER_PAGE)
+        .populate('createdBy', 'fullName profileImageURL');
+    }
+
+    const totalPages = Math.max(1, Math.ceil(totalBlogs / BLOGS_PER_PAGE));
+
+    res.render('home', {
+      user: req.user,
+      blogs: blogs,
+      currentPage: page,
+      totalPages,
+      totalBlogs,
+      selectedCategory: category,
+      selectedSort: sort,
+      searchQuery,
+      categories: filteredCategories,
+      error: req.query.error || null,
+    });
+  } catch (err) {
+    console.error("Error loading homepage:", err);
+    res.render('home', {
+      user: req.user,
+      blogs: [],
+      currentPage: 1,
+      totalPages: 1,
+      totalBlogs: 0,
+      selectedCategory: '',
+      selectedSort: 'latest',
+      searchQuery: '',
+      categories: [],
+      error: "Error loading articles.",
+    });
+  }
 });
 
 app.use('/user', UserRoute);

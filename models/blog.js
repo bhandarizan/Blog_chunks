@@ -37,7 +37,27 @@ const blogSchema = new Schema({
     likes: [{
         type: Schema.Types.ObjectId,
         ref: "User"
-    }]
+    }],
+    fontFamily: {
+        type: String,
+        default: 'Inter'
+    },
+    fontUrl: {
+        type: String,
+        required: false
+    },
+    fontSize: {
+        type: String,
+        default: 'medium'
+    },
+    lineHeight: {
+        type: String,
+        default: 'relaxed'
+    },
+    fontColor: {
+        type: String,
+        default: '#334155'
+    }
 },
     { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );

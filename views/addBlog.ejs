@@ -2,49 +2,78 @@
 <html lang="en">
   <head>
     <%- include('./partials/head') %>
-    <title>Add New Blog</title>
+    <title>Create New Article — Blog Chunks</title>
   </head>
   <body>
     <%- include('./partials/nav') %>
 
-    <div class="container mt-3">
-      <form action="/blog" method="post" enctype="multipart/form-data">
-        <div class="mb-3">
-          <label for="coverImage" class="form-label">Cover Image</label>
+    <div class="container py-5" style="max-width: 800px;">
+      <div class="d-flex align-items-center justify-content-between mb-4">
+        <h2 class="fw-bold mb-0"><i class="bi bi-pencil-square text-primary me-2"></i>Create New Article</h2>
+        <a href="/" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Back to Feed</a>
+      </div>
+
+      <% if (locals.error) { %>
+        <div class="alert alert-danger flash-alert mb-4" role="alert">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i> <%= error %>
+        </div>
+      <% } %>
+
+      <form action="/blog" method="post" enctype="multipart/form-data" class="bg-white p-4 p-md-5 rounded-4 shadow-sm border">
+        
+        <!-- Cover Image Upload -->
+        <div class="mb-4">
+          <label for="coverImage" class="form-label fw-semibold">
+            <i class="bi bi-image me-1 text-primary"></i> Cover Image
+          </label>
           <input
             type="file"
             class="form-control"
             id="coverImage"
             name="coverImage"
-            aria-describedby="coverImage"
+            accept="image/*"
           />
-        </div>
-        <div class="mb-3">
-          <label for="title" class="form-label">Title</label>
-          <input
-            type="text"
-            class="form-control"
-            id="title"
-            name="title"
-            aria-describedby="title"
-          />
-        </div>
-        <div class="mb-3">
-          <label for="body">Body</label>
-          <textarea name="body" class="form-control" id="body" rows="5"></textarea>
         </div>
 
-        <div class="mb-3">
-          <label for="category" class="form-label">Category</label>
-          <input type="text" class="form-control" id="category" name="category" placeholder="e.g. Technology" />
+        <!-- Article Title -->
+        <div class="mb-4">
+          <label for="title" class="form-label fw-semibold">Article Title <span class="text-danger">*</span></label>
+          <input
+            type="text"
+            class="form-control form-control-lg"
+            id="title"
+            name="title"
+            placeholder="Enter article title..."
+            required
+          />
         </div>
-        <div class="mb-3">
-          <label for="tags" class="form-label">Tags (comma-separated)</label>
-          <input type="text" class="form-control" id="tags" name="tags" placeholder="e.g. javascript, webdev" />
+
+        <!-- Article Body -->
+        <div class="mb-4">
+          <label for="body" class="form-label fw-semibold">Article Body <span class="text-danger">*</span></label>
+          <textarea name="body" class="form-control" id="body" rows="12" placeholder="Write your content here..." required></textarea>
         </div>
-        <div class="mb-3 d-flex gap-2">
-          <button type="submit" name="action" value="publish" class="btn btn-primary">Publish</button>
-          <button type="submit" name="action" value="draft" class="btn btn-outline-secondary">Save Draft</button>
+
+        <!-- Category & Tags -->
+        <div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <label for="category" class="form-label fw-semibold">Category</label>
+            <input type="text" class="form-control" id="category" name="category" placeholder="e.g. Technology, Design, Personal" />
+          </div>
+          <div class="col-md-6">
+            <label for="tags" class="form-label fw-semibold">Tags (comma-separated)</label>
+            <input type="text" class="form-control" id="tags" name="tags" placeholder="e.g. javascript, webdev, tutorial" />
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="d-flex gap-3 pt-3 border-top">
+          <button type="submit" name="action" value="publish" class="btn btn-hero-primary px-4">
+            <i class="bi bi-send-fill"></i> Publish Article
+          </button>
+          <button type="submit" name="action" value="draft" class="btn btn-outline-secondary px-4">
+            <i class="bi bi-bookmark"></i> Save Draft
+          </button>
         </div>
       </form>
     </div>
@@ -55,28 +84,22 @@
         const form = document.querySelector('form[action="/blog"]');
         const fields = ['title', 'body', 'category', 'tags'];
         
-        // Restore values
         fields.forEach(field => {
           const el = document.getElementById(field);
           if (el) {
             const savedValue = localStorage.getItem(`blogDraft_${field}`);
-            if (savedValue) {
-              el.value = savedValue;
-            }
-            
-            // Save on input
+            if (savedValue) el.value = savedValue;
             el.addEventListener('input', () => {
               localStorage.setItem(`blogDraft_${field}`, el.value);
             });
           }
         });
 
-        // Clear values on submit
-        form.addEventListener('submit', () => {
-          fields.forEach(field => {
-            localStorage.removeItem(`blogDraft_${field}`);
+        if (form) {
+          form.addEventListener('submit', () => {
+            fields.forEach(field => localStorage.removeItem(`blogDraft_${field}`));
           });
-        });
+        }
       });
     </script>
   </body>

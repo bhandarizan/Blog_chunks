@@ -27,12 +27,22 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-  if (allowedMimeTypes.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error('Invalid file type. Only JPEG, PNG, WEBP, and GIF are allowed.'));
+  const allowedImageMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+  const allowedFontExtensions = ['.ttf', '.otf', '.woff', '.woff2'];
+  const ext = path.extname(file.originalname).toLowerCase();
+
+  if (file.fieldname === 'coverImage') {
+    if (allowedImageMimeTypes.includes(file.mimetype)) {
+      return cb(null, true);
+    }
+    return cb(new Error('Invalid image file type. Only JPEG, PNG, WEBP, and GIF are allowed.'));
+  } else if (file.fieldname === 'fontFile') {
+    if (allowedFontExtensions.includes(ext)) {
+      return cb(null, true);
+    }
+    return cb(new Error('Invalid font file type. Only TTF, OTF, WOFF, and WOFF2 files are allowed.'));
   }
+  cb(null, true);
 };
 
 const upload = multer({ 
@@ -43,14 +53,19 @@ const upload = multer({
   }
 });
 
+const blogUpload = upload.fields([
+  { name: "coverImage", maxCount: 1 },
+  { name: "fontFile", maxCount: 1 }
+]);
+
 router.get("/add-new", requireAuth, renderAddBlogPage);
 router.get("/my-blogs", requireAuth, handleMyBlogs);
 router.get("/edit/:id", requireAuth, renderEditBlogPage);
-router.post("/edit/:id", requireAuth, upload.single("coverImage"), handleUpdateBlog);
+router.post("/edit/:id", requireAuth, blogUpload, handleUpdateBlog);
 router.post("/delete/:id", requireAuth, handleDeleteBlog);
 router.post("/:id/like", requireAuth, handleToggleLike);
 router.get("/:id", handleGetBlogById);
 router.post("/comment/:blogId", requireAuth, handleCreateComment);
-router.post("/", requireAuth, upload.single("coverImage"), handleCreateBlog);
+router.post("/", requireAuth, blogUpload, handleCreateBlog);
 
 module.exports = router;

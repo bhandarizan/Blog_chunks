@@ -71,29 +71,107 @@
 
       <!-- Section header -->
       <div class="section-header">
-        <h2 class="section-title">Latest Articles</h2>
+        <div>
+          <h2 class="section-title">
+            <% if (selectedCategory) { %>
+              <%= selectedCategory %> Articles
+            <% } else { %>
+              Explore Articles
+            <% } %>
+          </h2>
+          <p class="text-muted mb-0" style="font-size: 0.875rem;">
+            Showing <%= totalBlogs %> <%= totalBlogs === 1 ? 'article' : 'articles' %>
+            <% if (selectedCategory || searchQuery || selectedSort !== 'latest') { %>
+              matching your filters
+            <% } %>
+          </p>
+        </div>
         <% if (totalPages > 1) { %>
-          <span class="text-muted" style="font-size: 0.875rem;">
+          <div class="badge bg-light text-dark border px-3 py-2" style="font-size: 0.85rem; font-weight: 500;">
             Page <%= currentPage %> of <%= totalPages %>
-          </span>
+          </div>
         <% } %>
+      </div>
+
+      <!-- Professional Filter & Search Toolbar -->
+      <div class="filter-toolbar">
+        <form action="/" method="GET" id="filter-form" class="row g-3 align-items-center">
+          <!-- Search input -->
+          <div class="col-lg-4 col-md-6">
+            <div class="search-input-group">
+              <i class="bi bi-search search-icon"></i>
+              <input 
+                type="text" 
+                name="q" 
+                class="form-control" 
+                placeholder="Search articles by title, content or tags..." 
+                value="<%= locals.searchQuery || '' %>"
+              />
+            </div>
+          </div>
+
+          <!-- Sort dropdown -->
+          <div class="col-lg-3 col-md-6">
+            <select name="sort" class="form-select filter-select" onchange="document.getElementById('filter-form').submit();">
+              <option value="latest" <%= (locals.selectedSort === 'latest' || !locals.selectedSort) ? 'selected' : '' %>>⚡ Sort by: Latest</option>
+              <option value="popular" <%= locals.selectedSort === 'popular' ? 'selected' : '' %>>🔥 Sort by: Most Viewed</option>
+              <option value="liked" <%= locals.selectedSort === 'liked' ? 'selected' : '' %>>❤️ Sort by: Most Liked</option>
+              <option value="oldest" <%= locals.selectedSort === 'oldest' ? 'selected' : '' %>>⏳ Sort by: Oldest First</option>
+            </select>
+          </div>
+
+          <!-- Hidden category input -->
+          <input type="hidden" name="category" id="selected-category-input" value="<%= locals.selectedCategory || '' %>" />
+
+          <!-- Category Pills -->
+          <div class="col-lg-5 col-12">
+            <div class="category-pills-wrap">
+              <a href="/?sort=<%= locals.selectedSort || 'latest' %>&q=<%= encodeURIComponent(locals.searchQuery || '') %>" 
+                 class="category-pill-btn <%= !locals.selectedCategory ? 'active' : '' %>">
+                All Topics
+              </a>
+              <% if (locals.categories && locals.categories.length > 0) { %>
+                <% locals.categories.forEach(cat => { %>
+                  <a href="/?category=<%= encodeURIComponent(cat) %>&sort=<%= locals.selectedSort || 'latest' %>&q=<%= encodeURIComponent(locals.searchQuery || '') %>" 
+                     class="category-pill-btn <%= locals.selectedCategory === cat ? 'active' : '' %>">
+                    <i class="bi bi-tag-fill text-muted me-1" style="font-size: 0.75rem;"></i><%= cat %>
+                  </a>
+                <% }) %>
+              <% } %>
+            </div>
+          </div>
+
+          <!-- Active filters badge / clear button -->
+          <% if (locals.selectedCategory || locals.searchQuery || (locals.selectedSort && locals.selectedSort !== 'latest')) { %>
+            <div class="col-12 d-flex align-items-center justify-content-between pt-2 border-top">
+              <span class="text-muted" style="font-size: 0.85rem;">
+                Active Filters: 
+                <% if (locals.selectedCategory) { %><span class="badge bg-primary me-1"><%= locals.selectedCategory %></span><% } %>
+                <% if (locals.searchQuery) { %><span class="badge bg-info text-dark me-1">"<%= locals.searchQuery %>"</span><% } %>
+                <% if (locals.selectedSort && locals.selectedSort !== 'latest') { %><span class="badge bg-secondary me-1"><%= locals.selectedSort %></span><% } %>
+              </span>
+              <a href="/" class="btn btn-sm btn-outline-danger" style="font-size: 0.78rem;">
+                <i class="bi bi-x-circle me-1"></i> Clear Filters
+              </a>
+            </div>
+          <% } %>
+        </form>
       </div>
 
       <% if (blogs.length === 0) { %>
       <!-- Empty state -->
       <div class="empty-state">
         <div class="empty-state-icon"><i class="bi bi-journal-x"></i></div>
-        <h3>No articles yet</h3>
-        <p>Be the first to share your story with the world.</p>
-        <% if (locals.user) { %>
-          <a href="/blog/add-new" class="btn-hero-primary">
-            <i class="bi bi-pencil-square"></i> Write your first post
-          </a>
-        <% } else { %>
-          <a href="/user/signup" class="btn-hero-primary">
-            <i class="bi bi-person-plus"></i> Join & write
-          </a>
-        <% } %>
+        <h3>No articles found</h3>
+        <p>Try refining your search keyword or selecting a different category.</p>
+        <div class="d-flex justify-content-center gap-2">
+          <a href="/" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-counterclockwise"></i> Reset Filters</a>
+          <% if (locals.user) { %>
+            <a href="/blog/add-new" class="btn-hero-primary" style="font-size: 0.85rem; padding: 0.4rem 1rem;">
+              <i class="bi bi-pencil-square"></i> Create Post
+            </a>
+          <% } %>
+        </div>
       </div>
 
       <% } else { %>
@@ -168,10 +246,21 @@
         <% }) %>
       </div>
 
+      <% 
+        function buildPageUrl(pageNum) {
+          const params = new URLSearchParams();
+          params.set('page', pageNum);
+          if (locals.selectedCategory) params.set('category', locals.selectedCategory);
+          if (locals.selectedSort) params.set('sort', locals.selectedSort);
+          if (locals.searchQuery) params.set('q', locals.searchQuery);
+          return '/?' + params.toString();
+        }
+      %>
+
       <% if (totalPages > 1) { %>
       <nav class="pagination-wrap" aria-label="Page navigation">
         <!-- Prev -->
-        <a href="/?page=<%= currentPage - 1 %>"
+        <a href="<%= buildPageUrl(currentPage - 1) %>"
            class="page-btn <%= currentPage <= 1 ? 'disabled' : '' %>"
            aria-label="Previous">
           <i class="bi bi-chevron-left"></i>
@@ -180,14 +269,14 @@
         <!-- Page numbers -->
         <% for (let p = 1; p <= totalPages; p++) { %>
           <% if (p === 1 || p === totalPages || (p >= currentPage - 1 && p <= currentPage + 1)) { %>
-            <a href="/?page=<%= p %>" class="page-btn <%= p === currentPage ? 'active' : '' %>"><%= p %></a>
+            <a href="<%= buildPageUrl(p) %>" class="page-btn <%= p === currentPage ? 'active' : '' %>"><%= p %></a>
           <% } else if (p === currentPage - 2 || p === currentPage + 2) { %>
             <span class="page-btn disabled">…</span>
           <% } %>
         <% } %>
 
         <!-- Next -->
-        <a href="/?page=<%= currentPage + 1 %>"
+        <a href="<%= buildPageUrl(currentPage + 1) %>"
            class="page-btn <%= currentPage >= totalPages ? 'disabled' : '' %>"
            aria-label="Next">
           <i class="bi bi-chevron-right"></i>

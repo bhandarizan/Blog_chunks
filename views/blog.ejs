@@ -121,7 +121,7 @@
           <!-- Meta bar -->
           <div class="text-muted pb-4 mb-4 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-3" style="font-size: 0.9rem;">
             <div class="d-flex align-items-center gap-3 flex-wrap">
-              <a href="/user/profile/<%= blog.createdBy._id %>" class="d-flex align-items-center gap-2 text-decoration-none text-dark">
+              <a href="<%= locals.user ? '/user/profile/' + blog.createdBy._id : '/user/signin' %>" class="d-flex align-items-center gap-2 text-decoration-none text-dark">
                 <img src="<%= blog.createdBy.profileImageURL %>" width="40" height="40" class="rounded-circle border" style="object-fit: cover;" />
                 <span class="fw-semibold"><%= blog.createdBy.fullName %></span>
               </a>
@@ -134,19 +134,19 @@
             <div class="d-flex align-items-center">
               <% if (locals.user) { %>
                 <form action="/blog/<%= blog._id %>/like" method="post" class="m-0">
-                  <button type="submit" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1 border-0 bg-light px-3 py-1.5 rounded-pill">
+                  <button type="submit" class="btn btn-outline-danger d-flex align-items-center gap-2 border-0 bg-light px-4 py-2 rounded-pill" style="transition: all 0.2s;">
                     <% if (blog.likes && blog.likes.some(like => like.toString() === locals.user._id.toString())) { %>
-                      <i class="bi bi-heart-fill text-danger fs-6"></i>
+                      <i class="bi bi-heart-fill text-danger" style="font-size: 1.25rem;"></i>
                     <% } else { %>
-                      <i class="bi bi-heart text-danger fs-6"></i>
+                      <i class="bi bi-heart text-danger" style="font-size: 1.25rem;"></i>
                     <% } %>
-                    <span class="text-dark fw-bold" style="font-size: 0.85rem;"><%= blog.likes ? blog.likes.length : 0 %> Likes</span>
+                    <span class="text-dark fw-bold" style="font-size: 1rem;"><%= blog.likes ? blog.likes.length : 0 %> Likes</span>
                   </button>
                 </form>
               <% } else { %>
-                <div class="d-flex align-items-center gap-1 bg-light px-3 py-1.5 rounded-pill">
-                  <i class="bi bi-heart text-muted fs-6"></i>
-                  <span class="text-muted fw-bold" style="font-size: 0.85rem;"><%= blog.likes ? blog.likes.length : 0 %> Likes</span>
+                <div class="d-flex align-items-center gap-2 bg-light px-4 py-2 rounded-pill">
+                  <i class="bi bi-heart text-muted" style="font-size: 1.25rem;"></i>
+                  <span class="text-muted fw-bold" style="font-size: 1rem;"><%= blog.likes ? blog.likes.length : 0 %> Likes</span>
                 </div>
               <% } %>
             </div>
@@ -194,12 +194,12 @@
       <!-- Author Bio -->
       <div class="card border-0 shadow-sm p-3 mb-5" style="max-width: 920px; margin: 0 auto; background: #fff; border-radius: var(--radius);">
         <div class="d-flex align-items-center gap-3">
-          <a href="/user/profile/<%= blog.createdBy._id %>">
+          <a href="<%= locals.user ? '/user/profile/' + blog.createdBy._id : '/user/signin' %>">
             <img src="<%= blog.createdBy.profileImageURL %>" width="60" height="60" class="rounded-circle border border-2 border-primary" style="object-fit: cover;" />
           </a>
           <div>
             <span class="text-muted d-block" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Written by</span>
-            <a href="/user/profile/<%= blog.createdBy._id %>" class="fw-bold text-decoration-none text-dark fs-5">
+            <a href="<%= locals.user ? '/user/profile/' + blog.createdBy._id : '/user/signin' %>" class="fw-bold text-decoration-none text-dark fs-5">
               <%= blog.createdBy.fullName %>
             </a>
           </div>
@@ -233,12 +233,12 @@
           <% comments.forEach(comment => { %>
           <div class="card mb-3 border-0 shadow-sm">
             <div class="card-body rounded d-flex gap-3 align-items-start" style="background-color: #fff; border: 1px solid var(--border);">
-               <a href="/user/profile/<%= comment.createdBy._id %>">
+               <a href="<%= locals.user ? '/user/profile/' + comment.createdBy._id : '/user/signin' %>">
                  <img src="<%= comment.createdBy.profileImageURL %>" width="46" height="46" class="rounded-circle" style="object-fit: cover; border: 1.5px solid var(--border);" />
                </a>
                <div class="w-100">
                  <div class="d-flex justify-content-between align-items-center mb-1">
-                   <a href="/user/profile/<%= comment.createdBy._id %>" class="text-decoration-none text-dark">
+                   <a href="<%= locals.user ? '/user/profile/' + comment.createdBy._id : '/user/signin' %>" class="text-decoration-none text-dark">
                      <h6 class="mb-0 fw-bold"><%= comment.createdBy.fullName %></h6>
                    </a>
                    <small class="text-muted" style="font-size: 0.78rem;">

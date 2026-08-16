@@ -93,7 +93,8 @@
         <% } %>
       </div>
 
-      <!-- Professional Filter & Search Toolbar -->
+      <% if (locals.user) { %>
+      <!-- Professional Filter & Search Toolbar (Logged-in) -->
       <div class="filter-toolbar">
         <form action="/" method="GET" id="filter-form" class="row g-3 align-items-center">
           <!-- Search input -->
@@ -113,10 +114,10 @@
           <!-- Sort dropdown -->
           <div class="col-lg-3 col-md-6">
             <select name="sort" class="form-select filter-select" onchange="document.getElementById('filter-form').submit();">
-              <option value="latest" <%= (locals.selectedSort === 'latest' || !locals.selectedSort) ? 'selected' : '' %>>⚡ Sort by: Latest</option>
-              <option value="popular" <%= locals.selectedSort === 'popular' ? 'selected' : '' %>>🔥 Sort by: Most Viewed</option>
-              <option value="liked" <%= locals.selectedSort === 'liked' ? 'selected' : '' %>>❤️ Sort by: Most Liked</option>
-              <option value="oldest" <%= locals.selectedSort === 'oldest' ? 'selected' : '' %>>⏳ Sort by: Oldest First</option>
+              <option value="latest" <%= (locals.selectedSort === 'latest' || !locals.selectedSort) ? 'selected' : '' %>>Sort by: Latest</option>
+              <option value="popular" <%= locals.selectedSort === 'popular' ? 'selected' : '' %>>Sort by: Most Viewed</option>
+              <option value="liked" <%= locals.selectedSort === 'liked' ? 'selected' : '' %>>Sort by: Most Liked</option>
+              <option value="oldest" <%= locals.selectedSort === 'oldest' ? 'selected' : '' %>>Sort by: Oldest First</option>
             </select>
           </div>
 
@@ -157,6 +158,35 @@
           <% } %>
         </form>
       </div>
+      <% } else { %>
+      <!-- Simple Search for Visitors -->
+      <div class="filter-toolbar mb-4">
+        <form action="/" method="GET" class="row justify-content-center">
+          <div class="col-lg-8">
+            <div class="search-input-group" style="box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-radius: 50px; background: white;">
+              <i class="bi bi-search search-icon" style="left: 1.5rem; color: #a3a3a3;"></i>
+              <input 
+                type="text" 
+                name="q" 
+                class="form-control border-0" 
+                style="border-radius: 50px; padding: 1rem 1rem 1rem 3.5rem; font-size: 1.1rem; background: transparent; box-shadow: none;"
+                placeholder="Search articles..." 
+                value="<%= locals.searchQuery || '' %>"
+              />
+              <button type="submit" class="btn position-absolute" style="right: 0.5rem; top: 0.5rem; bottom: 0.5rem; background: #292524; color: white; border-radius: 50px; padding: 0 1.5rem; font-weight: 500;">Search</button>
+            </div>
+            <% if (locals.searchQuery) { %>
+              <div class="text-center mt-3">
+                <span class="text-muted" style="font-size: 0.9rem;">
+                  Showing results for: <strong style="color: #292524;">"<%= locals.searchQuery %>"</strong>
+                </span>
+                <a href="/" class="text-muted ms-2" style="font-size: 0.85rem; text-decoration: underline;">Clear search</a>
+              </div>
+            <% } %>
+          </div>
+        </form>
+      </div>
+      <% } %>
 
       <% if (blogs.length === 0) { %>
       <!-- Empty state -->

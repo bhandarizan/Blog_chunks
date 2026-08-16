@@ -52,7 +52,7 @@ router.post('/signin', handleSignin);
 router.get('/logout', handleLogout);
 router.post('/signup', handleSignup);
 
-router.get('/profile/:id', handleGetProfile);
+router.get('/profile/:id', requireAuth, handleGetProfile);
 router.get('/settings', requireAuth, renderSettingsPage);
 router.post('/settings', requireAuth, upload.single('profileImage'), handleUpdateSettings);
 
